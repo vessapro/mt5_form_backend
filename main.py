@@ -5,18 +5,16 @@ from database import get_conn, release_conn
 
 app = FastAPI()
 
-# ✅ Allow all origins (for Telegram WebApp)
+# ✅ CORS supaya Telegram WebApp (GitHub Pages) boleh akses
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://vessapro.github.io",  # ✅ GitHub Pages origin
-        "https://*.vercel.app",        # (optional future)
+        "https://vessapro.github.io",  # ✅ Guna ni kalau deploy dekat GitHub Pages
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 async def root():
@@ -38,6 +36,8 @@ async def save_mt5_data(request: Request):
     try:
         conn = get_conn()
         cur = conn.cursor()
+
+        # ✅ Update existing user row (replace values if already exists)
         cur.execute("""
             UPDATE users SET
                 mt5_login = %s,
@@ -48,6 +48,7 @@ async def save_mt5_data(request: Request):
             WHERE user_id = %s
         """, (login, password, broker, risk_type, risk_value, user_id))
         conn.commit()
+
         return JSONResponse(content={"message": "✅ MT5 account saved successfully."})
     except Exception as e:
         print("❌ Error saving MT5 data:", e)
