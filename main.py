@@ -5,12 +5,10 @@ from database import get_conn, release_conn
 
 app = FastAPI()
 
-# ✅ CORS supaya Telegram WebApp (GitHub Pages) boleh akses
+# ✅ Enable CORS for GitHub Pages (Telegram WebApp)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://vessapro.github.io",  # ✅ Guna ni kalau deploy dekat GitHub Pages
-    ],
+    allow_origins=["https://vessapro.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,16 +35,19 @@ async def save_mt5_data(request: Request):
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ Update existing user row (replace values if already exists)
+        # ✅ Use INSERT INTO with ON CONFLICT to update existing user
         cur.execute("""
-            UPDATE users SET
-                mt5_login = %s,
-                mt5_password = %s,
-                mt5_broker = %s,
-                risk_type = %s,
-                risk_value = %s
-            WHERE user_id = %s
-        """, (login, password, broker, risk_type, risk_value, user_id))
+            INSERT INTO users (user_id, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (user_id) 
+            DO UPDATE SET 
+                mt5_login = EXCLUDED.mt5_login,
+                mt5_password = EXCLUDED.mt5_password,
+                mt5_broker = EXCLUDED.mt5_broker,
+                risk_type = EXCLUDED.risk_type,
+                risk_value = EXCLUDED.risk_value;
+        """, (user_id, login, password, broker, risk_type, risk_value))
+
         conn.commit()
 
         return JSONResponse(content={"message": "✅ MT5 account saved successfully."})
