@@ -8,10 +8,15 @@ app = FastAPI()
 # ✅ Allow all origins (for Telegram WebApp)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://vessapro.github.io",  # ✅ GitHub Pages origin
+        "https://*.vercel.app",        # (optional future)
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/")
 async def root():
