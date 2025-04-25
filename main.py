@@ -34,7 +34,14 @@ async def save_mt5_data(request: Request):
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ SIMPLE UPDATE, no insert
+        # ✅ Check if user_id exists first
+        cur.execute("SELECT 1 FROM users WHERE user_id = %s;", (user_id,))
+        exists = cur.fetchone()
+
+        if not exists:
+            return JSONResponse(content={"error": "❌ User not found."}, status_code=404)
+
+        # ✅ If exist, update MT5 fields
         cur.execute("""
             UPDATE users
             SET mt5_login = %s,
