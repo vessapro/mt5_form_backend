@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import get_conn, release_conn
@@ -18,30 +18,18 @@ async def root():
     return {"message": "✅ MT5 Form Backend is running."}
 
 @app.post("/save_mt5_data")
-async def save_mt5_data(request: Request):
-    data = await request.json()
-    user_id = data.get("user_id")
-    login = data.get("login")
-    password = data.get("password")
-    broker = data.get("broker")
-    risk_type = data.get("risk_type")
-    risk_value = data.get("risk_value")
-
-    if not all([user_id, login, password, broker, risk_type, risk_value]):
-        return JSONResponse(content={"error": "❌ Missing required fields"}, status_code=400)
-
+async def save_mt5_data(
+    user_id: int = Form(...),
+    login: str = Form(...),
+    password: str = Form(...),
+    broker: str = Form(...),
+    risk_type: str = Form(...),
+    risk_value: str = Form(...)
+):
     try:
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ Check if user_id exists first
-        cur.execute("SELECT 1 FROM users WHERE user_id = %s;", (user_id,))
-        exists = cur.fetchone()
-
-        if not exists:
-            return JSONResponse(content={"error": "❌ User not found."}, status_code=404)
-
-        # ✅ If exist, update MT5 fields
         cur.execute("""
             UPDATE users
             SET mt5_login = %s,
