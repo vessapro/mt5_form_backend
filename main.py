@@ -5,7 +5,6 @@ from database import get_conn, release_conn
 
 app = FastAPI()
 
-# ✅ Enable CORS for GitHub Pages (Telegram WebApp)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://vessapro.github.io"],
@@ -31,30 +30,28 @@ async def save_mt5_data(request: Request):
     if not all([user_id, login, password, broker, risk_type, risk_value]):
         return JSONResponse(content={"error": "❌ Missing required fields"}, status_code=400)
 
-    # ✅ Set chat_id = user_id (because in WebApp we don't have real chat_id)
     chat_id = user_id
+    name = ''  # dummy for NOT NULL constraint
 
     try:
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ Insert with chat_id
+        # ✅ Hanya update column yang berkaitan
         cur.execute("""
-            INSERT INTO users (user_id, chat_id, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (user_id) 
-            DO UPDATE SET 
-                chat_id = EXCLUDED.chat_id,
+            INSERT INTO users (user_id, chat_id, name, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (user_id)
+            DO UPDATE SET
                 mt5_login = EXCLUDED.mt5_login,
                 mt5_password = EXCLUDED.mt5_password,
                 mt5_broker = EXCLUDED.mt5_broker,
                 risk_type = EXCLUDED.risk_type,
                 risk_value = EXCLUDED.risk_value;
-        """, (user_id, chat_id, login, password, broker, risk_type, risk_value))
+        """, (user_id, chat_id, name, login, password, broker, risk_type, risk_value))
 
         conn.commit()
-
-        return JSONResponse(content={"message": "✅ MT5 account saved successfully."})
+        return JSONResponse(content={"message": "✅ MT5 details saved!"})
     except Exception as e:
         print("❌ Error saving MT5 data:", e)
         return JSONResponse(content={"error": "DB error"}, status_code=500)
