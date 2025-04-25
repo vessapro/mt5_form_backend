@@ -31,22 +31,26 @@ async def save_mt5_data(request: Request):
     if not all([user_id, login, password, broker, risk_type, risk_value]):
         return JSONResponse(content={"error": "❌ Missing required fields"}, status_code=400)
 
+    # ✅ Set chat_id = user_id (because in WebApp we don't have real chat_id)
+    chat_id = user_id
+
     try:
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ Use INSERT INTO with ON CONFLICT to update existing user
+        # ✅ Insert with chat_id
         cur.execute("""
-            INSERT INTO users (user_id, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO users (user_id, chat_id, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (user_id) 
             DO UPDATE SET 
+                chat_id = EXCLUDED.chat_id,
                 mt5_login = EXCLUDED.mt5_login,
                 mt5_password = EXCLUDED.mt5_password,
                 mt5_broker = EXCLUDED.mt5_broker,
                 risk_type = EXCLUDED.risk_type,
                 risk_value = EXCLUDED.risk_value;
-        """, (user_id, login, password, broker, risk_type, risk_value))
+        """, (user_id, chat_id, login, password, broker, risk_type, risk_value))
 
         conn.commit()
 
