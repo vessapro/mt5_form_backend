@@ -31,13 +31,12 @@ async def save_mt5_data(request: Request):
         return JSONResponse(content={"error": "❌ Missing required fields"}, status_code=400)
 
     chat_id = user_id
-    name = ''  # dummy for NOT NULL constraint
+    name = ''  # force kosong untuk bypass NOT NULL constraint
 
     try:
         conn = get_conn()
         cur = conn.cursor()
 
-        # ✅ Hanya update column yang berkaitan
         cur.execute("""
             INSERT INTO users (user_id, chat_id, name, mt5_login, mt5_password, mt5_broker, risk_type, risk_value)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
@@ -51,7 +50,7 @@ async def save_mt5_data(request: Request):
         """, (user_id, chat_id, name, login, password, broker, risk_type, risk_value))
 
         conn.commit()
-        return JSONResponse(content={"message": "✅ MT5 details saved!"})
+        return JSONResponse(content={"message": "✅ MT5 account saved successfully."})
     except Exception as e:
         print("❌ Error saving MT5 data:", e)
         return JSONResponse(content={"error": "DB error"}, status_code=500)
